@@ -46,18 +46,12 @@ def get_html_element(name, source):
 class PageRenderer:
     def __init__(self, filename):
         self.filename = filename
-    def render(self, dark=False):
+        self.html = None
+    def render(self):
         tmpdir = tempfile.TemporaryDirectory(dir='/tmp/')
-        args = ['asciidoc']
-        if dark:
-            args = args + ['--theme', 'asciidoc-dark.css']
-        else:
-            args = args + ['--theme', 'asciidoc-light.css']
-        args = args + ['-o', os.path.join(tmpdir.name, 'out.html'), self.filename]
+        args = ['asciidoc', '-o', os.path.join(tmpdir.name, 'out.html'), self.filename]
         handler = ProcessHandler(args)
-        if handler.returncode != 0:
-            print(handler.stdout)
-        html = None
+        self.html = None
         with open(os.path.join(tmpdir.name, 'out.html')) as f:
             self.html = f.read()
         tmpdir.cleanup()
@@ -137,21 +131,11 @@ class BaseHandler(tornado.web.RequestHandler):
     def initialize(self, options):
         self.options = options
     def special_render(self, __name, **options):
-        self.render(__name, name=self.options['name'], messages=messenger.items, dark_mode=(self.get_cookie('dark_mode') == 'true'), **options)
+        self.render(__name, name=self.options['name'], messages=messenger.items, **options)
 
 class RootHandler(BaseHandler):
     def get(self):
         self.special_render('base.template.html')
-
-class OptionsHandler(BaseHandler):
-    def post(self):
-        dark_mode = self.get_argument('dark_mode', 'false')
-        dark_mode = dark_mode == 'true'
-        if dark_mode:
-            self.set_cookie('dark_mode', 'true')
-        else:
-            self.set_cookie('dark_mode', 'false')
-        self.redirect('/')
 
 class SearchHandler(BaseHandler):
     def get_search_results(self, term):
@@ -174,7 +158,7 @@ class PageHandler(BaseHandler):
             self.redirect('/')
         name = os.path.join(self.options['source'], name)
         renderer = PageRenderer(name)
-        renderer.render(dark=(self.get_cookie('dark_mode', 'false') == 'true'))
+        renderer.render()
         body_text = get_html_element('body', renderer.html)
         head_text = get_html_element('head', renderer.html)
         self.special_render('page.template.html', page_head=head_text, page_body=body_text)
@@ -197,7 +181,7 @@ def create_app(options):
         (r"/page", PageHandler, dict(options=options)),
         (r"/search", SearchHandler, dict(options=options)),
         (r"/tree", TreeHandler, dict(options=options)),
-        (r"/options", OptionsHandler, dict(options=options)),
+        # (r"/options", OptionsHandler, dict(options=options)),
     ], template_path='templates', static_path='static')
     return app
 
