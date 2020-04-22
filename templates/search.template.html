@@ -1,0 +1,21 @@
+{% extends "base.template.html" %}
+
+{% block head %}
+{% end %}
+
+{% block body %}
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <td>Results</td>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in results %}
+        <tr>
+            <td><a href="/page?name={{item}}">{{ item }}</a></td>
+        </tr>
+    {% end %}    
+    </tbody> 
+</table>
+{% end %}

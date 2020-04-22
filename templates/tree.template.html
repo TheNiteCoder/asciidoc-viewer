@@ -1,0 +1,20 @@
+{% extends "base.template.html" %}
+
+{% block body %}
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <td>Files</td>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in tree %}
+        <tr>
+            <td><a href="/page?name={{item}}">{{ item }}</a></td>
+        </tr>
+    {% end %}
+    </tbody> 
+</table>
+
+{% end %}
