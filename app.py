@@ -6,6 +6,7 @@ import os.path
 import sys
 import tempfile
 import subprocess
+import re
 
 from bs4 import BeautifulSoup
 
@@ -23,8 +24,12 @@ def is_hidden(filename):
     name = os.path.basename(os.path.abspath(filename))
     return name.startswith('.')
 
+def is_asciidoc(filename):
+    ext = os.path.splitext(filename)[1]
+    return ext == '.adoc'
+
 def check_valid_filename(filename):
-    return not is_hidden(filename)
+    return not is_hidden(filename) and is_asciidoc(filename)
 
 class ProcessHandler:
     def __init__(self, args):
@@ -43,6 +48,21 @@ def get_html_element(name, source):
         content += str(item)
     return content
 
+class LinkFixer:
+    def __init__(self, html):
+        self.html = html
+    def fix_all_links(self):
+        soup = BeautifulSoup(self.html, 'html.parser')
+        for a in soup.find_all('a'):
+            link = a['href']
+            if re.match('http:[a-z]', link) is not None:
+                link = link[link.find(':')+1:]
+            # if no protocol was specified by user, assume just http
+            if re.match('http[s|]', link) is None:
+                link = 'http://' + link
+            a['href'] = link
+        self.html = str(soup)
+
 class PageRenderer:
     def __init__(self, filename):
         self.filename = filename
@@ -54,6 +74,9 @@ class PageRenderer:
         self.html = None
         with open(os.path.join(tmpdir.name, 'out.html')) as f:
             self.html = f.read()
+        link_fixer = LinkFixer(self.html)
+        link_fixer.fix_all_links()
+        self.html = link_fixer.html
         tmpdir.cleanup()
 
 def remove_root_path(root, path):
@@ -96,11 +119,12 @@ class FileFinder:
             for name in files:
                 if not check_valid_filename(name):
                     continue
+                search_term = remove_root_path(self.dir, os.path.join(root, name))
                 if case:
-                    if not name.find(searchterm) == -1:
+                    if not search_term.find(searchterm) == -1:
                         l.append(os.path.join(root, name))
                 else:
-                    if not name.lower().find(searchterm.lower()) == -1:
+                    if not search_term.lower().find(searchterm.lower()) == -1:
                         l.append(os.path.join(root, name))
         return l
 
