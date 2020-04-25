@@ -155,7 +155,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def initialize(self, options):
         self.options = options
     def special_render(self, __name, **options):
-        self.render(__name, name=self.options['name'], messages=messenger.items, **options)
+        self.render(__name, name=self.options['name'], messages=messenger.items, base=self.options['base'], **options)
 
 class RootHandler(BaseHandler):
     def get(self):
@@ -196,8 +196,10 @@ class TreeHandler(BaseHandler):
         l = filter(lambda x: check_valid_filename(x), l)
         self.special_render('tree.template.html', tree=l)
 
-def create_options(source="/doc", name="AsciiDoc Viewer", home_page='home.adoc'):
-    return dict(source=source, name=name, home_page=home_page)
+def create_options(source="/doc", name="AsciiDoc Viewer", home_page='home.adoc', base_dir='/'):
+    return dict(source=source, name=name, home_page=home_page, base=base_dir)
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
 def create_app(options):
     app = tornado.web.Application([
@@ -206,7 +208,7 @@ def create_app(options):
         (r"/search", SearchHandler, dict(options=options)),
         (r"/tree", TreeHandler, dict(options=options)),
         # (r"/options", OptionsHandler, dict(options=options)),
-    ], template_path='templates', static_path='static')
+    ], template_path=os.path.join(base_dir, 'templates'), static_path=os.path.join(base_dir, 'static'), xheaders=True)
     return app
 
 def main():
@@ -214,8 +216,9 @@ def main():
     parser.add_argument('--port', type=int, help="Port to listen on", default=2959)
     parser.add_argument('--source', type=str, help="Directory containing source asciidoc", default=".")
     parser.add_argument('--name', type=str, help="Name", default="AsciiDoc Viewer")
+    parser.add_argument('--base', type=str, help="Base Path",  default="")
     args = parser.parse_args()
-    options = create_options(source=args.source, name=args.name)
+    options = create_options(source=args.source, name=args.name, base_dir=args.base)
     app = create_app(options)
     app.listen(args.port)
     try:

@@ -13,10 +13,10 @@
         <nav class="navbar navbar-default navbar-themed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="/">{{ name }}</a>
+					<a class="navbar-brand" href="{{ base }}">{{ name }}</a>
                 </div>
                 <ul class="nav navbar-nav">
-                    <li><a href="/tree">Files</a></li>
+					<li><a href="{{ base }}/tree">Files</a></li>
                 </ul>
                 <form class="navbar-form navbar-right" action="/search" method="POST">
                     <div class="input-group">
