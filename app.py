@@ -199,6 +199,8 @@ class TreeHandler(BaseHandler):
 def create_options(source="/doc", name="AsciiDoc Viewer", home_page='home.adoc'):
     return dict(source=source, name=name, home_page=home_page)
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
 def create_app(options):
     app = tornado.web.Application([
         (r"/", RootHandler, dict(options=options)),
@@ -206,7 +208,7 @@ def create_app(options):
         (r"/search", SearchHandler, dict(options=options)),
         (r"/tree", TreeHandler, dict(options=options)),
         # (r"/options", OptionsHandler, dict(options=options)),
-    ], template_path='templates', static_path='static')
+    ], template_path=os.path.join(base_dir, 'templates'), static_path=os.path.join(base_dir, 'static'), xheaders=True)
     return app
 
 def main():
