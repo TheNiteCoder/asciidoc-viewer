@@ -219,7 +219,8 @@ def main():
     args = parser.parse_args()
     options = create_options(source=args.source, name=args.name)
     app = create_app(options)
-    app.listen(args.port)
+    server = tornado.httpserver.HTTPServer(app, xheaders=True)
+    server.listen(args.port)
     try:
         tornado.ioloop.IOLoop.current().start()
     except InternalError as e:
