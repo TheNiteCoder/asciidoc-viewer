@@ -2,6 +2,7 @@
 
 import tornado.ioloop
 import tornado.web
+from tornado.web import url as urlspec
 import os.path
 import sys
 import tempfile
@@ -155,7 +156,9 @@ class BaseHandler(tornado.web.RequestHandler):
     def initialize(self, options):
         self.options = options
     def special_render(self, __name, **options):
-        self.render(__name, name=self.options['name'], messages=messenger.items, **options)
+        def url_escape2(path):
+            return path(path, self.options['subpath'])
+        self.render(__name, name=self.options['name'], messages=messenger.items, url_escape2=url_escape2, **options)
 
 class RootHandler(BaseHandler):
     def get(self):
@@ -196,28 +199,34 @@ class TreeHandler(BaseHandler):
         l = filter(lambda x: check_valid_filename(x), l)
         self.special_render('tree.template.html', tree=l)
 
-def create_options(source="/doc", name="AsciiDoc Viewer", home_page='home.adoc'):
-    return dict(source=source, name=name, home_page=home_page)
+def create_options(source="/doc", name="AsciiDoc Viewer", home_page='home.adoc', subpath=''):
+    return dict(source=source, name=name, home_page=home_page, subpath=subpath)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
+def path(path, subpath=''):
+    return os.path.join('/', *subpath.split('/'), path)
+
 def create_app(options):
+    subpath = options['subpath']
     app = tornado.web.Application([
-        (r"/", RootHandler, dict(options=options)),
-        (r"/page", PageHandler, dict(options=options)),
-        (r"/search", SearchHandler, dict(options=options)),
-        (r"/tree", TreeHandler, dict(options=options)),
+        urlspec(path('', subpath), RootHandler, dict(options=options), name='home'),
+        urlspec(path('page', subpath), PageHandler, dict(options=options), name='page'),
+        urlspec(path('search', subpath), SearchHandler, dict(options=options), name='search'),
+        urlspec(path('tree', subpath), TreeHandler, dict(options=options), name='tree'),
         # (r"/options", OptionsHandler, dict(options=options)),
     ], template_path=os.path.join(base_dir, 'templates'), static_path=os.path.join(base_dir, 'static'), xheaders=True)
     return app
+
 
 def main():
     parser = ArgumentParser()
     parser.add_argument('--port', type=int, help="Port to listen on", default=2959)
     parser.add_argument('--source', type=str, help="Directory containing source asciidoc", default=".")
     parser.add_argument('--name', type=str, help="Name", default="AsciiDoc Viewer")
+    parser.add_argument('--subpath', type=str, help="Subpath", default='')
     args = parser.parse_args()
-    options = create_options(source=args.source, name=args.name)
+    options = create_options(source=args.source, name=args.name, subpath=args.subpath)
     app = create_app(options)
     server = tornado.httpserver.HTTPServer(app, xheaders=True)
     server.listen(args.port)

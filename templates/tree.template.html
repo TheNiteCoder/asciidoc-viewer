@@ -11,7 +11,7 @@
     <tbody>
     {% for item in tree %}
         <tr>
-            <td><a href="/page?name={{item}}">{{ item }}</a></td>
+			<td><a href="{{reverse_url('page')}}?name={{item}}">{{ item }}</a></td>
         </tr>
     {% end %}
     </tbody> 

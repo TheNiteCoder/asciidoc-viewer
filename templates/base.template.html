@@ -13,12 +13,12 @@
         <nav class="navbar navbar-default navbar-themed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="/">{{ name }}</a>
+					<a class="navbar-brand" href="{{reverse_url('home')}}">{{ name }}</a>
                 </div>
                 <ul class="nav navbar-nav">
-                    <li><a href="/tree">Files</a></li>
+					<li><a href="{{reverse_url('tree')}}">Files</a></li>
                 </ul>
-                <form class="navbar-form navbar-right" action="/search" method="POST">
+				<form class="navbar-form navbar-right" action="{{reverse_url('search')}}" method="POST">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Search" name="search">
                         <div class="input-group-btn">
